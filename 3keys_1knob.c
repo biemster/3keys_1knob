@@ -73,6 +73,14 @@ void NEO_update(void) {
   EA = 1;                                   // enable interrupts
 }
 
+// Read EEPROM (stolen from https://github.com/DeqingSun/ch55xduino/blob/ch55xduino/ch55xduino/ch55x/cores/ch55xduino/eeprom.c)
+uint8_t eeprom_read_byte (uint8_t addr){
+  ROM_ADDR_H = DATA_FLASH_ADDR >> 8;
+  ROM_ADDR_L = addr << 1; //Addr must be even
+  ROM_CTRL = ROM_CMD_READ;
+  return ROM_DATA_L;
+}
+
 // ===================================================================================
 // Main Function
 // ===================================================================================
@@ -100,12 +108,12 @@ void main(void) {
   WDT_start();                              // start watchdog timer
 
   // TODO: Read eeprom for key characters
-  char key1_char = '1';
-  char key2_char = '2';
-  char key3_char = '3';
-  char knobsw_char = 's';
-  char knobclockwise_char = 'r';
-  char knobcounterclockwise_char = 'l';
+  char key1_char = (char)eeprom_read_byte(0);
+  char key2_char = (char)eeprom_read_byte(1);
+  char key3_char = (char)eeprom_read_byte(2);
+  char knobsw_char = (char)eeprom_read_byte(3);
+  char knobclockwise_char = (char)eeprom_read_byte(4);
+  char knobcounterclockwise_char = (char)eeprom_read_byte(5);
 
   // Loop
   while(1) {
