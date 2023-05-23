@@ -15,6 +15,7 @@
 
 // NeoPixel configuration
 #define NEO_GRB                         // type of pixel: NEO_GRB or NEO_RGB
+#define NEO_MIN             0
 #define NEO_MAX             127
 
 // USB device descriptor

@@ -200,9 +200,9 @@ void main(void) {
 
     // Update NeoPixels
     NEO_update();
-    if(neo1) neo1--;                        // fade down NeoPixel
-    if(neo2) neo2--;                        // fade down NeoPixel
-    if(neo3) neo3--;                        // fade down NeoPixel
+    if(neo1 > NEO_MIN) neo1--;              // fade down NeoPixel
+    if(neo2 > NEO_MIN) neo2--;              // fade down NeoPixel
+    if(neo3 > NEO_MIN) neo3--;              // fade down NeoPixel
     DLY_ms(5);                              // latch and debounce
     WDT_reset();                            // reset watchdog
   }
