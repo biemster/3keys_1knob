@@ -5,7 +5,8 @@ Custom firmware for a 3-key + rotary encoder macropad (https://hackaday.io/proje
 `$ make bin`
 
 ### compile & flash to pad:
-- if on original firmware: connect P1.5 to GND and connect USB
+- if on original firmware: depending on hardware you need to connect P3.6 to
+  5V (VCC) using a 1k resistor or P1.5 to GND, while connecting USB
 - if on this firmware: press key1 while connecting USB
 - `$ make flash`
 
