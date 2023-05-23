@@ -60,9 +60,9 @@ void USB_ISR(void) __interrupt(INT_NO_USB) {
 // ===================================================================================
 
 // NeoPixel variables
-__idata uint8_t neo1 = 127;                 // brightness of NeoPixel 1
-__idata uint8_t neo2 = 127;                 // brightness of NeoPixel 2
-__idata uint8_t neo3 = 127;                 // brightness of NeoPixel 3
+__idata uint8_t neo1 = NEO_MAX;             // brightness of NeoPixel 1
+__idata uint8_t neo2 = NEO_MAX;             // brightness of NeoPixel 2
+__idata uint8_t neo3 = NEO_MAX;             // brightness of NeoPixel 3
 
 // Update NeoPixels
 void NEO_update(void) {
@@ -97,7 +97,7 @@ void main(void) {
   NEO_init();                               // init NeoPixels
   if(!PIN_read(PIN_KEY1)) {                 // key 1 pressed?
     NEO_latch();                            // make sure pixels are ready
-    for(i=9; i; i--) NEO_sendByte(127);     // light up all pixels
+    for(i=9; i; i--) NEO_sendByte(NEO_MAX); // light up all pixels
     BOOT_now();                             // enter bootloader
   }
 
@@ -121,7 +121,7 @@ void main(void) {
     if(!PIN_read(PIN_KEY1) != key1last) {   // key 1 state changed?
       key1last = !key1last;                 // update last state flag
       if(key1last) {                        // key was pressed?
-        neo1 = 127;                         // light up corresponding NeoPixel
+        neo1 = NEO_MAX;                     // light up corresponding NeoPixel
         NEO_update();                       // update NeoPixels NOW!
         KBD_type(key1_char);                // press and release
       }
@@ -130,14 +130,14 @@ void main(void) {
       }
     }
     else if(key1last) {                     // key still being pressed?
-      neo1 = 127;                           // keep NeoPixel on
+      neo1 = NEO_MAX;                       // keep NeoPixel on
     }
 
     // Handle key 2
     if(!PIN_read(PIN_KEY2) != key2last) {   // key 2 state changed?
       key2last = !key2last;                 // update last state flag
       if(key2last) {                        // key was pressed?
-        neo2 = 127;                         // light up corresponding NeoPixel
+        neo2 = NEO_MAX;                     // light up corresponding NeoPixel
         NEO_update();                       // update NeoPixels NOW!
         KBD_type(key2_char);                // press and release
       }
@@ -146,14 +146,14 @@ void main(void) {
       }
     }
     else if(key2last) {                     // key still being pressed?
-      neo2 = 127;                           // keep NeoPixel on
+      neo2 = NEO_MAX;                       // keep NeoPixel on
     }
 
     // Handle key 3
     if(!PIN_read(PIN_KEY3) != key3last) {   // key 3 state changed?
       key3last = !key3last;                 // update last state flag
       if(key3last) {                        // key was pressed?
-        neo3 = 127;                         // light up corresponding NeoPixel
+        neo3 = NEO_MAX;                     // light up corresponding NeoPixel
         NEO_update();                       // update NeoPixels NOW!
         KBD_type(key3_char);                // press and release
       }
@@ -162,7 +162,7 @@ void main(void) {
       }
     }
     else if(key3last) {                     // key still being pressed?
-      neo3 = 127;                           // keep NeoPixel on
+      neo3 = NEO_MAX;                       // keep NeoPixel on
     }
 
     // Handle knob switch
