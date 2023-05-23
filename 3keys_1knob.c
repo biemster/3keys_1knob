@@ -81,15 +81,33 @@ uint8_t eeprom_read_byte (uint8_t addr){
   return ROM_DATA_L;
 }
 
+// handle key press
+void handle_key(uint8_t current, uint8_t * last, char key_char, uint8_t * neo) {
+  if(current != *last) {                    // state changed?
+    *last = current;                        // update last state flag
+    if(current) {                           // key was pressed?
+      *neo = NEO_MAX;                       // light up corresponding NeoPixel
+      NEO_update();                         // update NeoPixels NOW!
+      KBD_type(key_char);                   // press and release
+    }
+    else {                                  // key was released?
+                                            // nothing to do in this case
+    }
+  }
+  else if(*last) {                          // key still being pressed?
+    *neo = NEO_MAX;                         // keep NeoPixel on
+  }
+}
+
 // ===================================================================================
 // Main Function
 // ===================================================================================
 void main(void) {
   // Variables
-  __bit key1last = 0;                       // last state of key 1
-  __bit key2last = 0;                       // last state of key 2
-  __bit key3last = 0;                       // last state of key 3
-  __bit knobswitchlast = 0;                 // last state of knob switch
+  uint8_t key1last = 0;                     // last state of key 1
+  uint8_t key2last = 0;                     // last state of key 2
+  uint8_t key3last = 0;                     // last state of key 3
+  uint8_t knobswitchlast = 0;               // last state of knob switch
   __idata uint8_t i;                        // temp variable
   uint8_t currentKnobKey;                   // current key to be sent by knob
 
@@ -117,53 +135,9 @@ void main(void) {
 
   // Loop
   while(1) {
-    // Handle key 1
-    if(!PIN_read(PIN_KEY1) != key1last) {   // key 1 state changed?
-      key1last = !key1last;                 // update last state flag
-      if(key1last) {                        // key was pressed?
-        neo1 = NEO_MAX;                     // light up corresponding NeoPixel
-        NEO_update();                       // update NeoPixels NOW!
-        KBD_type(key1_char);                // press and release
-      }
-      else {                                // key was released?
-                                            // nothing to do in this case
-      }
-    }
-    else if(key1last) {                     // key still being pressed?
-      neo1 = NEO_MAX;                       // keep NeoPixel on
-    }
-
-    // Handle key 2
-    if(!PIN_read(PIN_KEY2) != key2last) {   // key 2 state changed?
-      key2last = !key2last;                 // update last state flag
-      if(key2last) {                        // key was pressed?
-        neo2 = NEO_MAX;                     // light up corresponding NeoPixel
-        NEO_update();                       // update NeoPixels NOW!
-        KBD_type(key2_char);                // press and release
-      }
-      else {                                // key was released?
-                                            // nothing to do in this case
-      }
-    }
-    else if(key2last) {                     // key still being pressed?
-      neo2 = NEO_MAX;                       // keep NeoPixel on
-    }
-
-    // Handle key 3
-    if(!PIN_read(PIN_KEY3) != key3last) {   // key 3 state changed?
-      key3last = !key3last;                 // update last state flag
-      if(key3last) {                        // key was pressed?
-        neo3 = NEO_MAX;                     // light up corresponding NeoPixel
-        NEO_update();                       // update NeoPixels NOW!
-        KBD_type(key3_char);                // press and release
-      }
-      else {                                // key was released?
-                                            // nothing to do in this case
-      }
-    }
-    else if(key3last) {                     // key still being pressed?
-      neo3 = NEO_MAX;                       // keep NeoPixel on
-    }
+    handle_key(!PIN_read(PIN_KEY1), &key1last, key1_char, &neo1);
+    handle_key(!PIN_read(PIN_KEY2), &key2last, key2_char, &neo2);
+    handle_key(!PIN_read(PIN_KEY3), &key3last, key3_char, &neo3);
 
     // Handle knob switch
     if(!PIN_read(PIN_ENC_SW) != knobswitchlast) {
