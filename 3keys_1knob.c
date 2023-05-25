@@ -55,6 +55,12 @@ void USB_ISR(void) __interrupt(INT_NO_USB) {
   USB_interrupt();
 }
 
+// structur with key details
+struct key {
+  char code;
+  uint8_t last;
+};
+
 // ===================================================================================
 // NeoPixel Functions
 // ===================================================================================
@@ -82,19 +88,19 @@ uint8_t eeprom_read_byte (uint8_t addr){
 }
 
 // handle key press
-void handle_key(uint8_t current, uint8_t * last, char key_char, uint8_t * neo) {
-  if(current != *last) {                    // state changed?
-    *last = current;                        // update last state flag
+void handle_key(uint8_t current, struct key * key, uint8_t * neo) {
+  if(current != key->last) {                // state changed?
+    key->last = current;                    // update last state flag
     if(current) {                           // key was pressed?
       *neo = NEO_MAX;                       // light up corresponding NeoPixel
       NEO_update();                         // update NeoPixels NOW!
-      KBD_press(key_char);                  // press
+      KBD_press(key->code);                 // press
     }
     else {                                  // key was released?
-      KBD_release(key_char);                // release
+      KBD_release(key->code);               // release
     }
   }
-  else if(*last) {                          // key still being pressed?
+  else if(key->last) {                      // key still being pressed?
     *neo = NEO_MAX;                         // keep NeoPixel on
   }
 }
@@ -104,9 +110,10 @@ void handle_key(uint8_t current, uint8_t * last, char key_char, uint8_t * neo) {
 // ===================================================================================
 void main(void) {
   // Variables
-  uint8_t key1last = 0;                     // last state of key 1
-  uint8_t key2last = 0;                     // last state of key 2
-  uint8_t key3last = 0;                     // last state of key 3
+  struct key
+      key1 = { .last = 0 },                 // struct for key 1
+      key2 = { .last = 0 },                 // struct for key 2
+      key3 = { .last = 0 };                 // struct for key 3
   uint8_t knobswitchlast = 0;               // last state of knob switch
   __idata uint8_t i;                        // temp variable
   uint8_t currentKnobKey;                   // current key to be sent by knob
@@ -126,18 +133,18 @@ void main(void) {
   WDT_start();                              // start watchdog timer
 
   // TODO: Read eeprom for key characters
-  char key1_char = (char)eeprom_read_byte(0);
-  char key2_char = (char)eeprom_read_byte(1);
-  char key3_char = (char)eeprom_read_byte(2);
+  key1.code = (char)eeprom_read_byte(0);
+  key2.code = (char)eeprom_read_byte(1);
+  key3.code = (char)eeprom_read_byte(2);
   char knobsw_char = (char)eeprom_read_byte(3);
   char knobclockwise_char = (char)eeprom_read_byte(4);
   char knobcounterclockwise_char = (char)eeprom_read_byte(5);
 
   // Loop
   while(1) {
-    handle_key(!PIN_read(PIN_KEY1), &key1last, key1_char, &neo1);
-    handle_key(!PIN_read(PIN_KEY2), &key2last, key2_char, &neo2);
-    handle_key(!PIN_read(PIN_KEY3), &key3last, key3_char, &neo3);
+    handle_key(!PIN_read(PIN_KEY1), &key1, &neo1);
+    handle_key(!PIN_read(PIN_KEY2), &key2, &neo2);
+    handle_key(!PIN_read(PIN_KEY3), &key3, &neo3);
 
     // Handle knob switch
     if(!PIN_read(PIN_ENC_SW) != knobswitchlast) {
