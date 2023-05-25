@@ -110,10 +110,7 @@ void handle_key(uint8_t current, struct key * key, uint8_t * neo) {
 // ===================================================================================
 void main(void) {
   // Variables
-  struct key
-      key1 = { .last = 0 },                 // struct for key 1
-      key2 = { .last = 0 },                 // struct for key 2
-      key3 = { .last = 0 };                 // struct for key 3
+  struct key keys[3];                       // array of struct for keys
   uint8_t knobswitchlast = 0;               // last state of knob switch
   __idata uint8_t i;                        // temp variable
   uint8_t currentKnobKey;                   // current key to be sent by knob
@@ -133,18 +130,19 @@ void main(void) {
   WDT_start();                              // start watchdog timer
 
   // TODO: Read eeprom for key characters
-  key1.code = (char)eeprom_read_byte(0);
-  key2.code = (char)eeprom_read_byte(1);
-  key3.code = (char)eeprom_read_byte(2);
+  for (i = 0; i < 3; i++) {
+    keys[i].code = (char)eeprom_read_byte(i);
+    keys[i].last = 0;
+  }
   char knobsw_char = (char)eeprom_read_byte(3);
   char knobclockwise_char = (char)eeprom_read_byte(4);
   char knobcounterclockwise_char = (char)eeprom_read_byte(5);
 
   // Loop
   while(1) {
-    handle_key(!PIN_read(PIN_KEY1), &key1, &neo1);
-    handle_key(!PIN_read(PIN_KEY2), &key2, &neo2);
-    handle_key(!PIN_read(PIN_KEY3), &key3, &neo3);
+    handle_key(!PIN_read(PIN_KEY1), &keys[0], &neo1);
+    handle_key(!PIN_read(PIN_KEY2), &keys[1], &neo2);
+    handle_key(!PIN_read(PIN_KEY3), &keys[2], &neo3);
 
     // Handle knob switch
     if(!PIN_read(PIN_ENC_SW) != knobswitchlast) {
