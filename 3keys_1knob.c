@@ -87,7 +87,7 @@ void handle_key(uint8_t current, struct key * key, uint8_t * neo) {
   if(current != key->last) {                // state changed?
     key->last = current;                    // update last state flag
     if(current) {                           // key was pressed?
-      *neo = NEO_MAX;                       // light up corresponding NeoPixel
+      if(neo) *neo = NEO_MAX;               // light up corresponding NeoPixel
       KBD_press(key->code);                 // press
     }
     else {                                  // key was released?
@@ -95,7 +95,7 @@ void handle_key(uint8_t current, struct key * key, uint8_t * neo) {
     }
   }
   else if(key->last) {                      // key still being pressed?
-    *neo = NEO_MAX;                         // keep NeoPixel on
+    if(neo) *neo = NEO_MAX;                 // keep NeoPixel on
   }
 }
 
@@ -104,13 +104,11 @@ void handle_key(uint8_t current, struct key * key, uint8_t * neo) {
 // ===================================================================================
 void main(void) {
   // Variables
-  struct key keys[3];                       // array of struct for keys
-  uint8_t knobswitchlast = 0;               // last state of knob switch
+  struct key keys[6];                       // array of struct for keys
+  struct key * currentKnobKey;              // current key to be sent by knob
   __idata uint8_t i;                        // temp variable
-  uint8_t currentKnobKey;                   // current key to be sent by knob
   uint8_t neo[3] =
     { NEO_MAX, NEO_MAX, NEO_MAX };          // brightness of NeoPixels
-
 
   // Enter bootloader if key 1 is pressed
   NEO_init();                               // init NeoPixels
@@ -127,48 +125,33 @@ void main(void) {
   WDT_start();                              // start watchdog timer
 
   // TODO: Read eeprom for key characters
-  for (i = 0; i < 3; i++) {
+  for (i = 0; i < 6; i++) {
     keys[i].code = (char)eeprom_read_byte(i);
     keys[i].last = 0;
   }
-  char knobsw_char = (char)eeprom_read_byte(3);
-  char knobclockwise_char = (char)eeprom_read_byte(4);
-  char knobcounterclockwise_char = (char)eeprom_read_byte(5);
 
   // Loop
   while(1) {
     handle_key(!PIN_read(PIN_KEY1), &keys[0], &neo[0]);
     handle_key(!PIN_read(PIN_KEY2), &keys[1], &neo[1]);
     handle_key(!PIN_read(PIN_KEY3), &keys[2], &neo[2]);
-
-    // Handle knob switch
-    if(!PIN_read(PIN_ENC_SW) != knobswitchlast) {
-      knobswitchlast = !knobswitchlast;
-      if(knobswitchlast) {
-        KBD_press(knobsw_char);
-      }
-      else {
-        KBD_release(knobsw_char);
-      }
-    }
-    else if(knobswitchlast) {
-    }
+    handle_key(!PIN_read(PIN_ENC_SW), &keys[3], (void *)0);
 
     // Handle knob
     currentKnobKey = 0;                              // clear key variable
     if(!PIN_read(PIN_ENC_A)) {                       // encoder turned ?
       if(PIN_read(PIN_ENC_B)) {
-        currentKnobKey = knobclockwise_char;         // clockwise?
+        currentKnobKey = &keys[4];                   // clockwise?
       }
       else {
-        currentKnobKey = knobcounterclockwise_char;  // counter-clockwise?
+        currentKnobKey = &keys[5];                   // counter-clockwise?
       }
       DLY_ms(10);                                    // debounce
       while(!PIN_read(PIN_ENC_A));                   // wait until next detent
     }
 
     if(currentKnobKey) {
-      KBD_type(currentKnobKey);                      // press and release corresponding key ...
+      KBD_type(currentKnobKey->code);                // press and release corresponding key ...
     }
 
     // Update NeoPixels
