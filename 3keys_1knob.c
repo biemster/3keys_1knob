@@ -55,21 +55,22 @@ void USB_ISR(void) __interrupt(INT_NO_USB) {
   USB_interrupt();
 }
 
+// structur with key details
+struct key {
+  char code;
+  uint8_t last;
+};
+
 // ===================================================================================
 // NeoPixel Functions
 // ===================================================================================
 
-// NeoPixel variables
-__idata uint8_t neo1 = 127;                 // brightness of NeoPixel 1
-__idata uint8_t neo2 = 127;                 // brightness of NeoPixel 2
-__idata uint8_t neo3 = 127;                 // brightness of NeoPixel 3
-
 // Update NeoPixels
-void NEO_update(void) {
+void NEO_update(uint8_t * neo) {
   EA = 0;                                   // disable interrupts
-  NEO_writeColor(neo1, 0, 0);               // NeoPixel 1 lights up red
-  NEO_writeColor(0, neo2, 0);               // NeoPixel 2 lights up green
-  NEO_writeColor(0, 0, neo3);               // NeoPixel 3 lights up blue
+  NEO_writeColor(neo[0], 0, 0);             // NeoPixel 1 lights up red
+  NEO_writeColor(0, neo[1], 0);             // NeoPixel 2 lights up green
+  NEO_writeColor(0, 0, neo[2]);             // NeoPixel 3 lights up blue
   EA = 1;                                   // enable interrupts
 }
 
@@ -81,23 +82,39 @@ uint8_t eeprom_read_byte (uint8_t addr){
   return ROM_DATA_L;
 }
 
+// handle key press
+void handle_key(uint8_t current, struct key * key, uint8_t * neo) {
+  if(current != key->last) {                // state changed?
+    key->last = current;                    // update last state flag
+    if(current) {                           // key was pressed?
+      if(neo) *neo = NEO_MAX;               // light up corresponding NeoPixel
+      KBD_press(key->code);                 // press
+    }
+    else {                                  // key was released?
+      KBD_release(key->code);               // release
+    }
+  }
+  else if(key->last) {                      // key still being pressed?
+    if(neo) *neo = NEO_MAX;                 // keep NeoPixel on
+  }
+}
+
 // ===================================================================================
 // Main Function
 // ===================================================================================
 void main(void) {
   // Variables
-  __bit key1last = 0;                       // last state of key 1
-  __bit key2last = 0;                       // last state of key 2
-  __bit key3last = 0;                       // last state of key 3
-  __bit knobswitchlast = 0;                 // last state of knob switch
+  struct key keys[6];                       // array of struct for keys
+  struct key * currentKnobKey;              // current key to be sent by knob
   __idata uint8_t i;                        // temp variable
-  uint8_t currentKnobKey;                   // current key to be sent by knob
+  uint8_t neo[3] =
+    { NEO_MAX, NEO_MAX, NEO_MAX };          // brightness of NeoPixels
 
   // Enter bootloader if key 1 is pressed
   NEO_init();                               // init NeoPixels
   if(!PIN_read(PIN_KEY1)) {                 // key 1 pressed?
     NEO_latch();                            // make sure pixels are ready
-    for(i=9; i; i--) NEO_sendByte(127);     // light up all pixels
+    for(i=9; i; i--) NEO_sendByte(NEO_MAX); // light up all pixels
     BOOT_now();                             // enter bootloader
   }
 
@@ -108,101 +125,40 @@ void main(void) {
   WDT_start();                              // start watchdog timer
 
   // TODO: Read eeprom for key characters
-  char key1_char = (char)eeprom_read_byte(0);
-  char key2_char = (char)eeprom_read_byte(1);
-  char key3_char = (char)eeprom_read_byte(2);
-  char knobsw_char = (char)eeprom_read_byte(3);
-  char knobclockwise_char = (char)eeprom_read_byte(4);
-  char knobcounterclockwise_char = (char)eeprom_read_byte(5);
+  for (i = 0; i < 6; i++) {
+    keys[i].code = (char)eeprom_read_byte(i);
+    keys[i].last = 0;
+  }
 
   // Loop
   while(1) {
-    // Handle key 1
-    if(!PIN_read(PIN_KEY1) != key1last) {   // key 1 state changed?
-      key1last = !key1last;                 // update last state flag
-      if(key1last) {                        // key was pressed?
-        neo1 = 127;                         // light up corresponding NeoPixel
-        NEO_update();                       // update NeoPixels NOW!
-        KBD_type(key1_char);                // press and release
-      }
-      else {                                // key was released?
-                                            // nothing to do in this case
-      }
-    }
-    else if(key1last) {                     // key still being pressed?
-      neo1 = 127;                           // keep NeoPixel on
-    }
-
-    // Handle key 2
-    if(!PIN_read(PIN_KEY2) != key2last) {   // key 2 state changed?
-      key2last = !key2last;                 // update last state flag
-      if(key2last) {                        // key was pressed?
-        neo2 = 127;                         // light up corresponding NeoPixel
-        NEO_update();                       // update NeoPixels NOW!
-        KBD_type(key2_char);                // press and release
-      }
-      else {                                // key was released?
-                                            // nothing to do in this case
-      }
-    }
-    else if(key2last) {                     // key still being pressed?
-      neo2 = 127;                           // keep NeoPixel on
-    }
-
-    // Handle key 3
-    if(!PIN_read(PIN_KEY3) != key3last) {   // key 3 state changed?
-      key3last = !key3last;                 // update last state flag
-      if(key3last) {                        // key was pressed?
-        neo3 = 127;                         // light up corresponding NeoPixel
-        NEO_update();                       // update NeoPixels NOW!
-        KBD_type(key3_char);                // press and release
-      }
-      else {                                // key was released?
-                                            // nothing to do in this case
-      }
-    }
-    else if(key3last) {                     // key still being pressed?
-      neo3 = 127;                           // keep NeoPixel on
-    }
-
-    // Handle knob switch
-    if(!PIN_read(PIN_ENC_SW) != knobswitchlast) {
-      knobswitchlast = !knobswitchlast;
-      if(knobswitchlast) {
-        NEO_update();
-        KBD_type(knobsw_char);
-      }
-      else {
-      }
-    }
-    else if(knobswitchlast) {
-    }
+    handle_key(!PIN_read(PIN_KEY1), &keys[0], &neo[0]);
+    handle_key(!PIN_read(PIN_KEY2), &keys[1], &neo[1]);
+    handle_key(!PIN_read(PIN_KEY3), &keys[2], &neo[2]);
+    handle_key(!PIN_read(PIN_ENC_SW), &keys[3], (void *)0);
 
     // Handle knob
     currentKnobKey = 0;                              // clear key variable
     if(!PIN_read(PIN_ENC_A)) {                       // encoder turned ?
       if(PIN_read(PIN_ENC_B)) {
-        currentKnobKey = knobclockwise_char;         // clockwise?
+        currentKnobKey = &keys[4];                   // clockwise?
       }
       else {
-        currentKnobKey = knobcounterclockwise_char;  // counter-clockwise?
+        currentKnobKey = &keys[5];                   // counter-clockwise?
       }
       DLY_ms(10);                                    // debounce
       while(!PIN_read(PIN_ENC_A));                   // wait until next detent
     }
 
     if(currentKnobKey) {
-      KBD_press(currentKnobKey);                     // press corresponding key ...
-    }
-    else {
-      KBD_releaseAll();                              // ... or release last key
+      KBD_type(currentKnobKey->code);                // press and release corresponding key ...
     }
 
     // Update NeoPixels
-    NEO_update();
-    if(neo1) neo1--;                        // fade down NeoPixel
-    if(neo2) neo2--;                        // fade down NeoPixel
-    if(neo3) neo3--;                        // fade down NeoPixel
+    NEO_update(neo);
+    for (i = 0; i < 3; i++) {
+      if(neo[i] > NEO_GLOW) neo[i]--;        // fade down NeoPixel
+    }
     DLY_ms(5);                              // latch and debounce
     WDT_reset();                            // reset watchdog
   }
