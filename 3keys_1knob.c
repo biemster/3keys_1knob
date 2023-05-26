@@ -88,10 +88,10 @@ void handle_key(uint8_t current, uint8_t * last, char key_char, uint8_t * neo) {
     if(current) {                           // key was pressed?
       *neo = NEO_MAX;                       // light up corresponding NeoPixel
       NEO_update();                         // update NeoPixels NOW!
-      KBD_type(key_char);                   // press and release
+      KBD_press(key_char);                  // press
     }
     else {                                  // key was released?
-                                            // nothing to do in this case
+      KBD_release(key_char);                // release
     }
   }
   else if(*last) {                          // key still being pressed?
@@ -144,9 +144,10 @@ void main(void) {
       knobswitchlast = !knobswitchlast;
       if(knobswitchlast) {
         NEO_update();
-        KBD_type(knobsw_char);
+        KBD_press(knobsw_char);
       }
       else {
+        KBD_release(knobsw_char);
       }
     }
     else if(knobswitchlast) {
@@ -166,10 +167,7 @@ void main(void) {
     }
 
     if(currentKnobKey) {
-      KBD_press(currentKnobKey);                     // press corresponding key ...
-    }
-    else {
-      KBD_releaseAll();                              // ... or release last key
+      KBD_type(currentKnobKey);                      // press and release corresponding key ...
     }
 
     // Update NeoPixels
