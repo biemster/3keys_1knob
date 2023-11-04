@@ -10,6 +10,10 @@ Custom firmware for a 3-key + rotary encoder macropad (https://hackaday.io/proje
 - `$ make flash`
 
 ### configure keys:
-1. `$ isp55e0 --data-dump flashdata.bin`
-2. edit first 6 bytes of this binary (3 keys, plus 3 for the knob), and write it back:
-3. `$ isp55e0 --data-flash flashdata.bin`
+1. dump the current build: `$ isp55e0 --data-dump flashdata.bin`
+2. edit the first 6 bytes of this binary to the [key codes](./include/usb_conkbd.h) you want to use for:
+  - each of the three keys,
+  - the knob switch,
+  - turning the knob clockwise, then
+  - turning the knob counterclockwise
+3. write it back: `$ isp55e0 --data-flash flashdata.bin`
