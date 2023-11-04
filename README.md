@@ -5,7 +5,9 @@ Custom firmware for a 3-key + rotary encoder macropad (https://hackaday.io/proje
 `$ make bin`
 
 ### compile & flash to pad:
-- if on original firmware: connect P1.5 (pin 3) to GND (pin 14) and connect USB
+- if on original firmware:
+  - open the keypad and locate the 16-pin IC next to two of the key mounts
+  - connect P1.5 (pin 3) to GND (pin 14) and connect USB
   - if this doesn't work, try the CH552 default of connecting 3.6 (pin 12) to 3v3 (pin 16)
 - if on this firmware: press key1 while connecting USB
 - `$ make flash`
